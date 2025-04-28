@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate App Icons</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, button {
+      margin-bottom: 20px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #canvasContainer {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+    }
+    .icon-item {
+      text-align: center;
+    }
+    .download-all {
+      margin-top: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Generate App Icons for PWA</h1>
+  
+  <div class="container">
+    <label for="iconFile">Upload Logo/Icon Image (Square Recommended):</label>
+    <input type="file" id="iconFile" accept="image/*">
+    
+    <button id="generateBtn">Generate Icons</button>
+    
+    <div id="canvasContainer"></div>
+    
+    <div class="download-all">
+      <button id="downloadAllBtn" style="display: none;">Download All Icons</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const iconFile = document.getElementById('iconFile');
+      const generateBtn = document.getElementById('generateBtn');
+      const canvasContainer = document.getElementById('canvasContainer');
+      const downloadAllBtn = document.getElementById('downloadAllBtn');
+      
+      // Define icon sizes needed for PWA
+      const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+      
+      generateBtn.addEventListener('click', function() {
+        if (!iconFile.files.length) {
+          alert('Please select an image file first');
+          return;
+        }
+        
+        // Clear previous generated icons
+        canvasContainer.innerHTML = '';
+        
+        const file = iconFile.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            // Generate icons for each size
+            iconSizes.forEach(size => {
+              generateIcon(img, size);
+            });
+            
+            // Show download all button
+            downloadAllBtn.style.display = 'inline-block';
+          };
+          img.src = e.target.result;
+        };
+        
+        reader.readAsDataURL(file);
+      });
+      
+      function generateIcon(img, size) {
+        // Create canvas for this icon size
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw image centered and scaled to fit
+        const scale = Math.min(size / img.width, size / img.height);
+        const x = (size - img.width * scale) / 2;
+        const y = (size - img.height * scale) / 2;
+        
+        // Fill background with transparent or specific color
+        ctx.fillStyle = 'transparent';
+        ctx.fillRect(0, 0, size, size);
+        
+        // Draw the image centered
+        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+        
+        // Create download button for this icon
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = 'Download';
+        downloadBtn.addEventListener('click', function() {
+          downloadIcon(canvas, `icon-${size}x${size}.png`);
+        });
+        
+        // Create container for this icon
+        const iconItem = document.createElement('div');
+        iconItem.classList.add('icon-item');
+        iconItem.innerHTML = `<div>${size}x${size}</div>`;
+        iconItem.appendChild(canvas);
+        iconItem.appendChild(downloadBtn);
+        
+        canvasContainer.appendChild(iconItem);
+      }
+      
+      function downloadIcon(canvas, filename) {
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }
+      
+      downloadAllBtn.addEventListener('click', function() {
+        const canvases = canvasContainer.querySelectorAll('canvas');
+        canvases.forEach((canvas, index) => {
+          setTimeout(() => {
+            downloadIcon(canvas, `icon-${iconSizes[index]}x${iconSizes[index]}.png`);
+          }, index * 100);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
